@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -65,7 +66,7 @@ public final class HelmChart2Bundlebee {
             final var converter = container.select(Yaml2JsonConverter.class).get();
 
             final var source = normalize(Files.readAllLines(from)).replace("RELEASE-NAME-", "");
-            final var yamls = StreamSupport.stream(yaml.loadAll(source).spliterator(), false).collect(toList());
+            final var yamls = StreamSupport.stream(yaml.loadAll(source).spliterator(), false).filter(Objects::nonNull).collect(toList());
 
             final var logger = Logger.getLogger(HelmChart2Bundlebee.class.getName());
             final var jsonWriterFactory = Json.createWriterFactory(Map.of(JsonGenerator.PRETTY_PRINTING, true));
