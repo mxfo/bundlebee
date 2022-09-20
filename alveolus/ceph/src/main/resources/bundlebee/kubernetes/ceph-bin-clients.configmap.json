@@ -1,0 +1,11 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "ceph-bin-clients"
+  },
+  "data": {
+    "ceph-namespace-client-key.sh": "#!/bin/bash\n\n\n\nset -ex\n\nceph_activate_namespace() {\n  kube_namespace=$1\n  CEPH_KEY=$(kubectl get secret ${PVC_CEPH_STORAGECLASS_ADMIN_SECRET_NAME} \\\n      --namespace=${PVC_CEPH_STORAGECLASS_DEPLOYED_NAMESPACE} \\\n      -o json | jq -r '.data | .[]')\n  {\n  cat <<EOF\napiVersion: v1\nkind: Secret\nmetadata:\n  name: \"${PVC_CEPH_STORAGECLASS_USER_SECRET_NAME}\"\ntype: kubernetes.io/rbd\ndata:\n  key: $(echo ${CEPH_KEY})\nEOF\n  } | kubectl create --namespace ${kube_namespace} -f -\n}\n\nceph_activate_namespace ${DEPLOYMENT_NAMESPACE}\n\n",
+    "ceph-namespace-client-key-cleaner.sh": "#!/bin/bash\n\n\n\nset -ex\n\nkubectl delete secret \\\n  --namespace ${DEPLOYMENT_NAMESPACE} \\\n  --ignore-not-found=true \\\n  ${PVC_CEPH_STORAGECLASS_USER_SECRET_NAME}\n"
+  }
+}

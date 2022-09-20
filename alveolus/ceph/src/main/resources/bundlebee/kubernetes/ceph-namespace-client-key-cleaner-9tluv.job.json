@@ -1,0 +1,73 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "ceph-namespace-client-key-cleaner-9tluv",
+    "annotations": {
+      "helm.sh/hook": "pre-delete"
+    }
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "release_group": "RELEASE-NAME",
+          "application": "ceph",
+          "component": "client-key-cleaner",
+          "app.kubernetes.io/managed-by": "bundlebee",
+          "deploy.by": "{{user.name:-unknown}}",
+          "deploy.time": "{{annotations.deploytime}}",
+          "deploy.environment": "{{annotations.environment}}",
+          "project.version": "{{project.version}}"
+        }
+      },
+      "spec": {
+        "restartPolicy": "OnFailure",
+        "nodeSelector": {
+          "ceph-mon": "enabled"
+        },
+        "containers": [
+          {
+            "name": "ceph-namespace-client-keys-cleaner",
+            "image": "docker.io/port/ceph-config-helper:v1.7.5",
+            "imagePullPolicy": "IfNotPresent",
+            "env": [
+              {
+                "name": "DEPLOYMENT_NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name": "PVC_CEPH_STORAGECLASS_USER_SECRET_NAME",
+                "value": "pvc-ceph-client-key"
+              }
+            ],
+            "command": [
+              "/opt/ceph/ceph-namespace-client-key-cleaner.sh"
+            ],
+            "volumeMounts": [
+              {
+                "name": "ceph-bin",
+                "mountPath": "/opt/ceph/ceph-namespace-client-key-cleaner.sh",
+                "subPath": "ceph-namespace-client-key-cleaner.sh",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "ceph-bin",
+            "configMap": {
+              "name": "ceph-bin-clients",
+              "defaultMode": 365
+            }
+          }
+        ]
+      }
+    }
+  }
+}

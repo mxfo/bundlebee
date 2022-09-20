@@ -1,0 +1,10 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "ceph-etc"
+  },
+  "data": {
+    "ceph.conf": "[global]\nfsid = 028fe058-97e8-4ec3-8698-9133818387bf\nmon_host = ceph-mon.default.svc.cluster.local\n[osd]\ncluster_network = 192.168.0.0/16\nms_bind_port_max = 7100\npublic_network = 192.168.0.0/16\n"
+  }
+}

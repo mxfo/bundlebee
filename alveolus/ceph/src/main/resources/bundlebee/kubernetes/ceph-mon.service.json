@@ -1,0 +1,25 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "ceph-mon",
+    "annotations": {
+      "service.alpha.kubernetes.io/tolerate-unready-endpoints": "true"
+    }
+  },
+  "spec": {
+    "ports": [
+      {
+        "port": 6789,
+        "protocol": "TCP",
+        "targetPort": 6789
+      }
+    ],
+    "selector": {
+      "release_group": "RELEASE-NAME",
+      "application": "ceph",
+      "component": "mon"
+    },
+    "clusterIP": "None"
+  }
+}

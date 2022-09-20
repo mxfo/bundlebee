@@ -1,0 +1,104 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "ceph-mds-keyring-generator"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "release_group": "RELEASE-NAME",
+          "application": "ceph",
+          "component": "mds-keyring-generator",
+          "app.kubernetes.io/managed-by": "bundlebee",
+          "deploy.by": "{{user.name:-unknown}}",
+          "deploy.time": "{{annotations.deploytime}}",
+          "deploy.environment": "{{annotations.environment}}",
+          "project.version": "{{project.version}}"
+        }
+      },
+      "spec": {
+        "restartPolicy": "OnFailure",
+        "nodeSelector": {
+          "ceph-mon": "enabled"
+        },
+        "containers": [
+          {
+            "name": "ceph-mds-keyring-generator",
+            "image": "docker.io/port/ceph-config-helper:v1.7.5",
+            "imagePullPolicy": "IfNotPresent",
+            "env": [
+              {
+                "name": "DEPLOYMENT_NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name": "CEPH_GEN_DIR",
+                "value": "/opt/ceph"
+              },
+              {
+                "name": "CEPH_TEMPLATES_DIR",
+                "value": "/opt/ceph/templates"
+              },
+              {
+                "name": "CEPH_KEYRING_NAME",
+                "value": "ceph.keyring"
+              },
+              {
+                "name": "CEPH_KEYRING_TEMPLATE",
+                "value": "bootstrap.keyring.mds"
+              },
+              {
+                "name": "KUBE_SECRET_NAME",
+                "value": "ceph-bootstrap-mds-keyring"
+              }
+            ],
+            "command": [
+              "/opt/ceph/ceph-key.sh"
+            ],
+            "volumeMounts": [
+              {
+                "name": "ceph-bin",
+                "mountPath": "/opt/ceph/ceph-key.sh",
+                "subPath": "ceph-key.sh",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-bin",
+                "mountPath": "/opt/ceph/ceph-key.py",
+                "subPath": "ceph-key.py",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-templates",
+                "mountPath": "/opt/ceph/templates",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "ceph-bin",
+            "configMap": {
+              "name": "ceph-bin",
+              "defaultMode": 365
+            }
+          },
+          {
+            "name": "ceph-templates",
+            "configMap": {
+              "name": "ceph-templates",
+              "defaultMode": 292
+            }
+          }
+        ]
+      }
+    }
+  }
+}

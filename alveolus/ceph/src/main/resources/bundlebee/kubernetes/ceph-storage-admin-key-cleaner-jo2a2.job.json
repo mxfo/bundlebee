@@ -1,0 +1,77 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "ceph-storage-admin-key-cleaner-jo2a2",
+    "annotations": {
+      "helm.sh/hook": "pre-delete"
+    }
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "release_group": "RELEASE-NAME",
+          "application": "ceph",
+          "component": "admin-key-cleaner",
+          "app.kubernetes.io/managed-by": "bundlebee",
+          "deploy.by": "{{user.name:-unknown}}",
+          "deploy.time": "{{annotations.deploytime}}",
+          "deploy.environment": "{{annotations.environment}}",
+          "project.version": "{{project.version}}"
+        }
+      },
+      "spec": {
+        "restartPolicy": "OnFailure",
+        "nodeSelector": {
+          "ceph-mon": "enabled"
+        },
+        "containers": [
+          {
+            "name": "ceph-storage-admin-keys-cleaner",
+            "image": "docker.io/port/ceph-config-helper:v1.7.5",
+            "imagePullPolicy": "IfNotPresent",
+            "env": [
+              {
+                "name": "DEPLOYMENT_NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name": "PVC_CEPH_STORAGECLASS_ADMIN_SECRET_NAME",
+                "value": "pvc-ceph-conf-combined-storageclass"
+              },
+              {
+                "name": "CEPH_ADMIN_SECRETS_NAME",
+                "value": "ceph-client-admin-keyring\nceph-bootstrap-mds-keyring\nceph-bootstrap-mgr-keyring\nceph-mon-keyring\nceph-bootstrap-osd-keyring\nceph-bootstrap-rgw-keyring"
+              }
+            ],
+            "command": [
+              "/opt/ceph/ceph-storage-admin-key-cleaner.sh"
+            ],
+            "volumeMounts": [
+              {
+                "name": "ceph-bin",
+                "mountPath": "/opt/ceph/ceph-storage-admin-key-cleaner.sh",
+                "subPath": "ceph-storage-admin-key-cleaner.sh",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "ceph-bin",
+            "configMap": {
+              "name": "ceph-bin",
+              "defaultMode": 365
+            }
+          }
+        ]
+      }
+    }
+  }
+}

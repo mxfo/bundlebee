@@ -1,0 +1,14 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "ceph-templates"
+  },
+  "data": {
+    "admin.keyring": "[client.admin]\n  key = {{ key }}\n  auid = 0\n  caps mds = \"allow\"\n  caps mon = \"allow *\"\n  caps osd = \"allow *\"\n  caps mgr = \"allow *\"\n\n",
+    "bootstrap.keyring.mds": "[client.bootstrap-mds]\n  key = {{ key }}\n  caps mon = \"allow profile bootstrap-mds\"\n\n",
+    "bootstrap.keyring.osd": "[client.bootstrap-osd]\n  key = {{ key }}\n  caps mon = \"allow profile bootstrap-osd\"\n\n",
+    "bootstrap.keyring.rgw": "[client.bootstrap-rgw]\n  key = {{ key }}\n  caps mon = \"allow profile bootstrap-rgw\"\n\n",
+    "mon.keyring": "[mon.]\n  key = {{ key }}\n  caps mon = \"allow *\"\n"
+  }
+}

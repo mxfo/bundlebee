@@ -1,0 +1,102 @@
+{
+  "alveoli": [
+    {
+      "//": "Setup \"${project.artifactId}\" which runs ceph",
+      "name": "${project.groupId}:${project.artifactId}:${project.version}",
+      "descriptors": [
+        {
+          "name": "ceph-keystone-user-rgw.secret.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-bin-clients.configmap.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-bin.configmap.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-etc.configmap.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-templates.configmap.json",
+          "interpolate": true
+        },
+        {
+          "name": "general.storageclass.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mon.service.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-rgw.service.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mon.daemonset.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mds.deployment.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mgr.deployment.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mon-check.deployment.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-rbd-provisioner.deployment.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-rgw.deployment.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mds-keyring-generator.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-osd-keyring-generator.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-rgw-keyring-generator.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mon-keyring-generator.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-mgr-keyring-generator.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-namespace-client-key-generator.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-storage-keys-generator.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-storage-admin-key-cleaner-jo2a2.job.json",
+          "interpolate": true
+        },
+        {
+          "name": "ceph-namespace-client-key-cleaner-9tluv.job.json",
+          "interpolate": true
+        }
+      ]
+    }
+  ]
+}

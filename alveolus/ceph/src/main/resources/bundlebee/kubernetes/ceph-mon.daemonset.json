@@ -1,0 +1,366 @@
+{
+  "kind": "DaemonSet",
+  "apiVersion": "extensions/v1beta1",
+  "metadata": {
+    "name": "ceph-mon"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "release_group": "RELEASE-NAME",
+          "application": "ceph",
+          "component": "mon",
+          "app.kubernetes.io/managed-by": "bundlebee",
+          "deploy.by": "{{user.name:-unknown}}",
+          "deploy.time": "{{annotations.deploytime}}",
+          "deploy.environment": "{{annotations.environment}}",
+          "project.version": "{{project.version}}"
+        }
+      },
+      "spec": {
+        "nodeSelector": {
+          "ceph-mon": "enabled"
+        },
+        "hostNetwork": true,
+        "dnsPolicy": "ClusterFirstWithHostNet",
+        "serviceAccount": "default",
+        "initContainers": [
+          {
+            "name": "init",
+            "image": "docker.io/kolla/ubuntu-source-kubernetes-entrypoint:4.0.0",
+            "imagePullPolicy": "IfNotPresent",
+            "env": [
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name": "INTERFACE_NAME",
+                "value": "eth0"
+              },
+              {
+                "name": "DEPENDENCY_SERVICE",
+                "value": ""
+              },
+              {
+                "name": "DEPENDENCY_JOBS",
+                "value": ""
+              },
+              {
+                "name": "DEPENDENCY_DAEMONSET",
+                "value": ""
+              },
+              {
+                "name": "DEPENDENCY_CONTAINER",
+                "value": ""
+              },
+              {
+                "name": "COMMAND",
+                "value": "echo done"
+              }
+            ],
+            "command": [
+              "kubernetes-entrypoint"
+            ],
+            "volumeMounts": [
+            ]
+          },
+          {
+            "name": "ceph-init-dirs",
+            "image": "docker.io/ceph/daemon:tag-build-master-luminous-ubuntu-16.04",
+            "imagePullPolicy": "IfNotPresent",
+            "command": [
+              "/tmp/init_dirs.sh"
+            ],
+            "volumeMounts": [
+              {
+                "name": "ceph-bin",
+                "mountPath": "/tmp/init_dirs.sh",
+                "subPath": "init_dirs.sh",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-bin",
+                "mountPath": "/variables_entrypoint.sh",
+                "subPath": "variables_entrypoint.sh",
+                "readOnly": true
+              },
+              {
+                "name": "pod-var-lib-ceph",
+                "mountPath": "/var/lib/ceph",
+                "readOnly": false
+              },
+              {
+                "name": "pod-run",
+                "mountPath": "/run",
+                "readOnly": false
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "name": "cluster-audit-log-tailer",
+            "image": "docker.io/alpine:latest",
+            "imagePullPolicy": "IfNotPresent",
+            "command": [
+              "/tmp/log_handler.sh"
+            ],
+            "args": [
+              "/var/log/ceph/ceph.audit.log"
+            ],
+            "volumeMounts": [
+              {
+                "name": "pod-var-log-ceph",
+                "mountPath": "/var/log/ceph",
+                "readOnly": false
+              },
+              {
+                "name": "ceph-bin",
+                "mountPath": "/tmp/log_handler.sh",
+                "subPath": "log_handler.sh"
+              }
+            ]
+          },
+          {
+            "name": "cluster-log-tailer",
+            "image": "docker.io/alpine:latest",
+            "imagePullPolicy": "IfNotPresent",
+            "command": [
+              "/tmp/log_handler.sh"
+            ],
+            "args": [
+              "/var/log/ceph/ceph.log"
+            ],
+            "volumeMounts": [
+              {
+                "name": "pod-var-log-ceph",
+                "mountPath": "/var/log/ceph",
+                "readOnly": false
+              },
+              {
+                "name": "ceph-bin",
+                "mountPath": "/tmp/log_handler.sh",
+                "subPath": "log_handler.sh"
+              }
+            ]
+          },
+          {
+            "name": "ceph-mon",
+            "image": "docker.io/ceph/daemon:tag-build-master-luminous-ubuntu-16.04",
+            "imagePullPolicy": "IfNotPresent",
+            "env": [
+              {
+                "name": "K8S_HOST_NETWORK",
+                "value": "1"
+              },
+              {
+                "name": "MONMAP",
+                "value": "/var/lib/ceph/mon/monmap"
+              },
+              {
+                "name": "NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name": "CEPH_DAEMON",
+                "value": "mon"
+              },
+              {
+                "name": "CEPH_PUBLIC_NETWORK",
+                "value": "192.168.0.0/16"
+              },
+              {
+                "name": "KUBECTL_PARAM",
+                "value": "-l application=ceph -l component=mon"
+              },
+              {
+                "name": "MON_IP",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "status.podIP"
+                  }
+                }
+              }
+            ],
+            "command": [
+              "/start_mon.sh"
+            ],
+            "ports": [
+              {
+                "containerPort": 6789
+              }
+            ],
+            "livenessProbe": {
+              "tcpSocket": {
+                "port": 6789
+              },
+              "initialDelaySeconds": 60,
+              "timeoutSeconds": 5
+            },
+            "readinessProbe": {
+              "tcpSocket": {
+                "port": 6789
+              },
+              "timeoutSeconds": 5
+            },
+            "volumeMounts": [
+              {
+                "name": "ceph-bin",
+                "mountPath": "/start_mon.sh",
+                "subPath": "start_mon.sh",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-bin",
+                "mountPath": "/common_functions.sh",
+                "subPath": "common_functions.sh",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-etc",
+                "mountPath": "/etc/ceph/ceph.conf",
+                "subPath": "ceph.conf",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-client-admin-keyring",
+                "mountPath": "/etc/ceph/ceph.client.admin.keyring",
+                "subPath": "ceph.client.admin.keyring",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-mon-keyring",
+                "mountPath": "/etc/ceph/ceph.mon.keyring.seed",
+                "subPath": "ceph.mon.keyring",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-bin",
+                "mountPath": "/variables_entrypoint.sh",
+                "subPath": "variables_entrypoint.sh",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-bootstrap-osd-keyring",
+                "mountPath": "/var/lib/ceph/bootstrap-osd/ceph.keyring",
+                "subPath": "ceph.keyring",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-bootstrap-mds-keyring",
+                "mountPath": "/var/lib/ceph/bootstrap-mds/ceph.keyring",
+                "subPath": "ceph.keyring",
+                "readOnly": true
+              },
+              {
+                "name": "ceph-bootstrap-rgw-keyring",
+                "mountPath": "/var/lib/ceph/bootstrap-rgw/ceph.keyring",
+                "subPath": "ceph.keyring",
+                "readOnly": true
+              },
+              {
+                "name": "pod-var-lib-ceph",
+                "mountPath": "/var/lib/ceph",
+                "readOnly": false
+              },
+              {
+                "name": "pod-var-log-ceph",
+                "mountPath": "/var/log/ceph",
+                "readOnly": false
+              },
+              {
+                "name": "pod-run",
+                "mountPath": "/run",
+                "readOnly": false
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "ceph-bin",
+            "configMap": {
+              "name": "ceph-bin",
+              "defaultMode": 365
+            }
+          },
+          {
+            "name": "ceph-etc",
+            "configMap": {
+              "name": "ceph-etc",
+              "defaultMode": 292
+            }
+          },
+          {
+            "name": "pod-var-log-ceph",
+            "emptyDir": {
+            }
+          },
+          {
+            "name": "pod-var-lib-ceph",
+            "hostPath": {
+              "path": "/var/lib/ceph-helm/default/mon"
+            }
+          },
+          {
+            "name": "pod-run",
+            "emptyDir": {
+              "medium": "Memory"
+            }
+          },
+          {
+            "name": "ceph-client-admin-keyring",
+            "secret": {
+              "secretName": "ceph-client-admin-keyring"
+            }
+          },
+          {
+            "name": "ceph-mon-keyring",
+            "secret": {
+              "secretName": "ceph-mon-keyring"
+            }
+          },
+          {
+            "name": "ceph-bootstrap-osd-keyring",
+            "secret": {
+              "secretName": "ceph-bootstrap-osd-keyring"
+            }
+          },
+          {
+            "name": "ceph-bootstrap-mds-keyring",
+            "secret": {
+              "secretName": "ceph-bootstrap-mds-keyring"
+            }
+          },
+          {
+            "name": "ceph-bootstrap-rgw-keyring",
+            "secret": {
+              "secretName": "ceph-bootstrap-rgw-keyring"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

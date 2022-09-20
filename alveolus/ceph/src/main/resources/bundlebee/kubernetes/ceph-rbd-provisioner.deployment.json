@@ -1,0 +1,107 @@
+{
+  "kind": "Deployment",
+  "apiVersion": "extensions/v1beta1",
+  "metadata": {
+    "name": "ceph-rbd-provisioner"
+  },
+  "spec": {
+    "replicas": 2,
+    "strategy": {
+      "type": "Recreate"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "release_group": "RELEASE-NAME",
+          "application": "ceph",
+          "component": "rbd-provisioner",
+          "app.kubernetes.io/managed-by": "bundlebee",
+          "deploy.by": "{{user.name:-unknown}}",
+          "deploy.time": "{{annotations.deploytime}}",
+          "deploy.environment": "{{annotations.environment}}",
+          "project.version": "{{project.version}}"
+        }
+      },
+      "spec": {
+        "affinity": {
+          "podAntiAffinity": {
+            "preferredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "podAffinityTerm": {
+                  "labelSelector": {
+                    "matchExpressions": [
+                      {
+                        "key": "release_group",
+                        "operator": "In",
+                        "values": [
+                          "RELEASE-NAME"
+                        ]
+                      },
+                      {
+                        "key": "application",
+                        "operator": "In",
+                        "values": [
+                          "rbd"
+                        ]
+                      },
+                      {
+                        "key": "component",
+                        "operator": "In",
+                        "values": [
+                          "provisioner"
+                        ]
+                      }
+                    ]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                },
+                "weight": 10
+              }
+            ]
+          }
+        },
+        "containers": [
+          {
+            "name": "ceph-rbd-provisioner",
+            "image": "quay.io/external_storage/rbd-provisioner:v0.1.1",
+            "imagePullPolicy": "IfNotPresent",
+            "env": [
+              {
+                "name": "PROVISIONER_NAME",
+                "value": "ceph.com/rbd"
+              },
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              }
+            ],
+            "command": [
+              "/tmp/rbd-provisioner.sh"
+            ],
+            "volumeMounts": [
+              {
+                "name": "ceph-bin",
+                "mountPath": "/tmp/rbd-provisioner.sh",
+                "subPath": "rbd-provisioner.sh",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "ceph-bin",
+            "configMap": {
+              "name": "ceph-bin",
+              "defaultMode": 365
+            }
+          }
+        ]
+      }
+    }
+  }
+}
